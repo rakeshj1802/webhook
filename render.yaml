@@ -7,4 +7,4 @@ services:
     startCommand: gunicorn webhook:app
     envVars:
       - key: VERIFY_TOKEN
-        value: POSEBOT123  # This must match what you enter on the Meta Developer Portal
+        value: POSEBOT123  # Must match value in Meta Developer Portal
