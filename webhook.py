@@ -1,33 +1,32 @@
 from flask import Flask, request
-import os
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "POSEBOT123")
+VERIFY_TOKEN = "your_verify_token"  # Set this yourself
 
-@app.route('/')
-def home():
-    return "✅ WhatsApp Webhook is live."
+@app.route('/webhook', methods=['GET'])
+def verify():
+    """Meta will verify your webhook when you add it in the dashboard."""
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
 
-@app.route('/webhook', methods=['GET', 'POST'])
-def webhook():
-    if request.method == 'GET':
-        # Verification handshake
-        mode = request.args.get("hub.mode")
-        token = request.args.get("hub.verify_token")
-        challenge = request.args.get("hub.challenge")
-        
+    if mode and token:
         if mode == "subscribe" and token == VERIFY_TOKEN:
-            print("✅ Webhook verified successfully.")
+            print("✅ Webhook verified")
             return challenge, 200
         else:
-            print("❌ Webhook verification failed.")
-            return "Verification failed", 403
+            return "❌ Verification token mismatch", 403
+    return "❌ Bad request", 400
 
-    if request.method == 'POST':
-        data = request.get_json()
-        print("📩 Received webhook event:")
-        print(data)
-        return "EVENT_RECEIVED", 200
+@app.route('/webhook', methods=['POST'])
+def webhook_event():
+    """Handle webhook events like comments, likes, insights, etc."""
+    data = request.json
+    print("📩 Received webhook event:", data)
 
-    return "Method Not Allowed", 405
+    # You can add logic to auto-analyze insights, store likes/comments, etc.
+    return "✅ Event received", 200
+
+if __name__ == '__main__':
+    app.run(port=5000)
