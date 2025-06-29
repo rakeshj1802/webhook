@@ -1,32 +1,31 @@
-from flask import Flask, request
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
 
-app = Flask(__name__)
+const VERIFY_TOKEN = "POSTBOT123"; // Use this exact token in Meta dashboard
 
-VERIFY_TOKEN = "your_verify_token"  # Set this yourself
+app.use(bodyParser.json());
 
-@app.route('/webhook', methods=['GET'])
-def verify():
-    """Meta will verify your webhook when you add it in the dashboard."""
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
+app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-    if mode and token:
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            print("✅ Webhook verified")
-            return challenge, 200
-        else:
-            return "❌ Verification token mismatch", 403
-    return "❌ Bad request", 400
+  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    console.log("✅ Verified Webhook with Meta");
+    res.status(200).send(challenge);
+  } else {
+    console.log("❌ Failed Verification");
+    res.sendStatus(403);
+  }
+});
 
-@app.route('/webhook', methods=['POST'])
-def webhook_event():
-    """Handle webhook events like comments, likes, insights, etc."""
-    data = request.json
-    print("📩 Received webhook event:", data)
+app.post('/webhook', (req, res) => {
+  console.log("📩 Webhook Event:");
+  console.log(JSON.stringify(req.body, null, 2));
+  res.sendStatus(200);
+});
 
-    # You can add logic to auto-analyze insights, store likes/comments, etc.
-    return "✅ Event received", 200
-
-if __name__ == '__main__':
-    app.run(port=5000)
+const listener = app.listen(process.env.PORT, () => {
+  console.log('✅ Webhook live on port ' + listener.address().port);
+});
