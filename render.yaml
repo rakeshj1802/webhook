@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: whatsapp-webhook
+    name: instagram-meta-webhook
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn webhook:app
     envVars:
       - key: VERIFY_TOKEN
-        value: POSTBOT123  # Must match value in Meta Developer Portal
+        value: POSTBOT123
