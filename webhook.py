@@ -2,7 +2,7 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = "thinkfinex_webhook_2025"
+VERIFY_TOKEN = "thinkfinex_webhook_2025"  # Must match Meta setup
 
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
@@ -17,6 +17,5 @@ def webhook():
             return "Forbidden", 403
 
     if request.method == "POST":
-        data = request.json
-        print("📩 Webhook event:", data)
-        return "Event received", 200
+        print("📩 Event received:", request.json)
+        return "OK", 200
