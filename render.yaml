@@ -1,10 +1,9 @@
 services:
   - type: web
-    name: instagram-meta-webhook
+    name: thinkfinex-webhook
     env: python
-    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn webhook:app
+    startCommand: gunicorn app:app
     envVars:
-      - key: VERIFY_TOKEN
-        value: POSTBOT123
+      - key: FLASK_ENV
+        value: production
