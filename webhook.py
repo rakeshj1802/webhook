@@ -2,11 +2,15 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = 'POSEBOT123'  # Must match the token you enter on Facebook
+VERIFY_TOKEN = 'POSEBOT123'  # Must exactly match Facebook Developer Verify Token
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST', 'HEAD'])
 def webhook():
-    if request.method == 'GET':
+    if request.method == 'HEAD':
+        # Just respond OK to HEAD requests
+        return '', 200
+
+    elif request.method == 'GET':
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
@@ -15,12 +19,12 @@ def webhook():
             print('Webhook verified successfully.')
             return challenge, 200
         else:
+            print('Verification failed.')
             return 'Verification failed', 403
 
     elif request.method == 'POST':
         data = request.json
-        print('Received message:')
-        print(data)
+        print('Received Instagram Message:', data)
         return 'EVENT_RECEIVED', 200
 
 if __name__ == '__main__':
