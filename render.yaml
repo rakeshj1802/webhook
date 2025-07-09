@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: thinkfinex-webhook
+    name: whatsapp-webhook
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn webhook:app
     envVars:
       - key: VERIFY_TOKEN
-        value: production
+        value: POSEBOT123
