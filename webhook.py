@@ -1,62 +1,48 @@
-from flask import Flask, redirect, request
+from flask import Flask, request
 import requests
+import os
 
 app = Flask(__name__)
 
-# Replace these with your App details:
-APP_ID = '1626542948040488'
-APP_SECRET = '7a856c2d974e1b26fe25b257f24c506a'
-REDIRECT_URI = 'https://webhook-g6zu.onrender.com/login/callback'  # Your public callback URL
+# Instagram/Facebook Verify Token (must match what you enter in Facebook Developers Dashboard)
+VERIFY_TOKEN = 'POSEBOT123'  
 
-@app.route('/')
-def home():
-    return '''
-        <h2>Instagram Business Login</h2>
-        <a href="/login">Login with Instagram</a>
-    '''
+# Your n8n Public Webhook URL (Example from LocalTunnel or Render)
+N8N_WEBHOOK_URL = 'https://myn8nbot.loca.lt/webhook-test/1a26dc91-b446-42c8-9cfe-af2d5182b813'
 
-@app.route('/login')
-def login():
-    # Redirect user to Instagram OAuth dialog
-    oauth_url = (
-        f"https://api.instagram.com/oauth/authorize"
-        f"?client_id={APP_ID}"
-        f"&redirect_uri={REDIRECT_URI}"
-        f"&scope=user_profile,user_media"
-        f"&response_type=code"
-    )
-    return redirect(oauth_url)
+@app.route('/', methods=['GET', 'POST', 'HEAD'])
+def webhook():
+    if request.method == 'HEAD':
+        # Respond OK for HEAD requests (some services use it)
+        return '', 200
 
-@app.route('/login/callback')
-def instagram_callback():
-    # Instagram redirects here after login with 'code' in query params
-    code = request.args.get('code')
-    if not code:
-        return 'Authorization failed.', 400
+    elif request.method == 'GET':
+        # Instagram Webhook Verification (Initial Setup)
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
 
-    # Exchange code for access token
-    token_url = "https://api.instagram.com/oauth/access_token"
-    payload = {
-        'client_id': APP_ID,
-        'client_secret': APP_SECRET,
-        'grant_type': 'authorization_code',
-        'redirect_uri': REDIRECT_URI,
-        'code': code,
-    }
+        if mode == 'subscribe' and token == VERIFY_TOKEN:
+            print('Webhook verified successfully.')
+            return challenge, 200
+        else:
+            print('Webhook verification failed.')
+            return 'Verification failed', 403
 
-    response = requests.post(token_url, data=payload)
-    if response.status_code != 200:
-        return f"Failed to get access token: {response.text}", 400
+    elif request.method == 'POST':
+        # Receiving Instagram Webhook Events (Messages, Comments, etc.)
+        data = request.json
+        print('Received Instagram Event:', data)
 
-    data = response.json()
-    access_token = data.get('access_token')
-    user_id = data.get('user_id')
+        # Forwarding Data to n8n Webhook
+        try:
+            response = requests.post(N8N_WEBHOOK_URL, json=data)
+            print(f"Forwarded to n8n, Status Code: {response.status_code}")
+        except Exception as e:
+            print(f"Error forwarding to n8n: {e}")
 
-    return f'''
-        <h3>Access Token Received!</h3>
-        <p><strong>Access Token:</strong> {access_token}</p>
-        <p><strong>User ID:</strong> {user_id}</p>
-    '''
+        return 'EVENT_RECEIVED', 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3000)
+    port = int(os.environ.get('PORT', 3000))
+    app.run(host='0.0.0.0', port=port)
